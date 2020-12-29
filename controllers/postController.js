@@ -1,28 +1,53 @@
 const Post = require('../models/post');
 const {validationResult} = require('express-validator');
+const fs = require('fs');
+const path = require('path');
+
 
 
 exports.getPosts = (req, res, next) => {
-	res.status(200).json({
-		posts: [
-			{
-				_id: '1',
-				title: 'Jeffrey\'s Blog',
-				content: 'This is a super post describing my big Tech blog. Corner for the best IT professionals',
-				imageUrl: 'images/duck.jpg',
-				creator: { name: 'Jeffrey Onochie'},
-				createdAt: new Date()
-			},
-			{	_id: '2',
-				title: 'The mights of programming',
-				content: 'A simple article to get you up and running with some critical information for programmers',
-				imageUrl: 'images/duck.jpg',
-				creator: { name: 'ND Aduba'},
-				createdAt: new Date('2020-12-25')
-			}
-		]
+	Post.find()
+	.then( posts => {
+		if (!posts) {
+			const error = new Error('Posts cannot be found.');
+			error.statusCode = 404;
+			throw error; //transfers execution to catch()
+		}
+
+		res.status(200).json({
+		message: 'Posts found!',
+		posts: posts
+	});
+	})
+	.catch( err => {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
 	});
 };
+
+exports.getPost = (req, res, next) => {
+	const postId = req.params.postId;
+
+	Post.findById(postId)
+	.then( post => {
+		if (!post) {
+			const error = new Error('Post cannot be found.');
+			error.statusCode = 404;
+			throw error;
+		}
+		res.status(200).json({
+			message: 'Post found!',
+			post: post
+		})
+	}).catch( err => {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	});
+}
 
 exports.createPost = (req, res, next) => {
 	const errors = validationResult(req);

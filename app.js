@@ -15,6 +15,12 @@ app.use( (req, res, next) => {
 	next();
 });
 app.use('/feed', feedRoutes);
+app.use( (error, req, res, next) => {
+	console.log(error);
+	const status = error.statusCode;
+	const message = error.message;
+	res.status(status).json({message:message, errors:error.errors});
+});
 
 Mongoose.connect(config.mongodbURI, {useNewUrlParser: true, useUnifiedTopology: true})
 .then( result => {

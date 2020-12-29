@@ -12,7 +12,7 @@ router.post('/post', [
 		.isLength({min: 10, max: 90}).withMessage('Title should be between 10 to 90 characters.'),
 	body('content')
 		.trim()
-		.isLength({min: 10}).withMessage('Title should be atleast 10 characters.'),
+		.isLength({min: 10}).withMessage('Content should be atleast 10 characters.'),
 
 	], postController.createPost);
 

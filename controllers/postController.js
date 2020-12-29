@@ -27,10 +27,10 @@ exports.getPosts = (req, res, next) => {
 exports.createPost = (req, res, next) => {
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
-		return res.status(422).json({
-			message: 'Validation failed. Post data is invalid',
-			errors: errors.array()
-		})
+		const error = new Error('Validation failed. Entered data is invalid.');
+		error.statusCode = 422;
+		error.errors = errors.array();
+		throw error;	//exits this function execution if an error exist
 	}
 	const post = new Post({
 		title: req.body.title,
@@ -45,5 +45,10 @@ exports.createPost = (req, res, next) => {
 			message: 'Post created successfully!'
 		})
 	})
-	.catch( err => console.log(err));
+	.catch( err => {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	});
 };

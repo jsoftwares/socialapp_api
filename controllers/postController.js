@@ -98,6 +98,18 @@ exports.updatePost = (req, res, next) => {
 		throw error;	//exits this function execution if an error exist
 	}
 
+	const title = req.body.title;
+	const content = req.body.content;
+	const imageUrl = req.body.image;	//received from frondend if no new file is picked
+	if (req.file) {
+		imageUrl = req.file.path;	//use new image if one was picked in frontend
+	}
+	if (!imageUrl) {
+		const error = new Error('No image was picked.');
+		error.statusCode = 422;
+		throw error;
+	}
+
 	Post.findById(postId)
 	.then( post => {
 		if (!post) {
@@ -106,11 +118,16 @@ exports.updatePost = (req, res, next) => {
 			throw error;
 		}
 
-		post.title = req.body.title;
-		post.content = req.body.content;
+		if (imageUrl !== post.imageUrl) {
+			deleteImage(post.imageUrl);
+		}
+
+		post.title = title;
+		post.content = content;
+		post.imageUrl = imageUrl;
 		return post.save();
 	}).then( result => {
-		res.status(201).json({
+		res.status(200).json({
 			post: result,
 			message: 'Post updated!'
 		});

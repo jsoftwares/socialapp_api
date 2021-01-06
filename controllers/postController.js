@@ -9,18 +9,26 @@ const deleteImage = filePath => {
 }
 
 exports.getPosts = (req, res, next) => {
-	Post.find()
+	const currentPage = req.query.page || 1;
+	const perPage = 2;	//2 has also been set in frondend as required for this purpose. 
+	let totalItems;
+	Post.find().countDocuments()
+	.then( count => {
+		totalItems = count;
+		return Post.find().skip((currentPage - 1) * perPage).limit(perPage);
+	})
 	.then( posts => {
-		if (!posts) {
-			const error = new Error('Posts cannot be found.');
-			error.statusCode = 404;
-			throw error; //transfers execution to catch()
-		}
+			if (!posts) {
+				const error = new Error('Posts cannot be found.');
+				error.statusCode = 404;
+				throw error; //transfers execution to catch()
+			}
 
-		res.status(200).json({
-		message: 'Posts found!',
-		posts: posts
-	});
+			res.status(200).json({
+			message: 'Posts found!',
+			posts: posts,
+			totalItems: totalItems
+		});
 	})
 	.catch( err => {
 		if (!err.statusCode) {
@@ -66,7 +74,7 @@ exports.createPost = (req, res, next) => {
 		error.statusCode = 422;
 		throw error;
 	}
-	const imageUrl = req.file.path;
+	const imageUrl = req.file.path.replace('\\', '/');
 	const post = new Post({
 		title: req.body.title,
 		content: req.body.content,
@@ -155,7 +163,7 @@ exports.deletePost = (req, res, next) => {
 		deleteImage(post.imageUrl);
 		return Post.findByIdAndRemove(postId)
 		.then( result => {
-			res.sendStatus(200).json({
+			res.status(200).json({
 				message: 'Post deleted.'
 			})
 		})

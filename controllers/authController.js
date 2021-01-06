@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const config = require('../util/development.json');
 
-exports.signup = (req, res, next) => {
+exports.signup = async (req, res, next) => {
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
 		const error = new Error('Validation failed. Entered data is invalid.');
@@ -18,27 +18,26 @@ exports.signup = (req, res, next) => {
 	const email = req.body.email;
 	const password = req.body.password;
 
-	bcrypt.hash(password, 12)
-	.then(hashedPass => {
+	try{
+		const hashedPass = await bcrypt.hash(password, 12);
+	
 		const user = new User({
 			name: name.toUpperCase(),
 			email: email,
 			password: hashedPass
 		});
-		return user.save();
-	})
-	.then( result => {
-		res.status(201).json({ messge: 'User created!', userId: result._id})
-	})
-	.catch( err => {
+		await user.save();
+		res.status(201).json({ messge: 'User created!', userId: user._id});
+
+	}catch( err ){
 		if (!err.statusCode) {
 			err.statusCode = 500;
 		}
 		next(err);
-	})
+	}
 };
 
-exports.login = (req, res, next) => {
+exports.login = async (req, res, next) => {
 
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
@@ -50,36 +49,33 @@ exports.login = (req, res, next) => {
 
 	const email = req.body.email;
 	const password = req.body.password;
-	let loadedUser;
-
-	User.findOne({email:email})
-	.then( user => {
+	
+	try{
+		const user = await User.findOne({email:email});
+	
 		if (!user) {
 			const error = new Error('Invalid email or password.');
 			error.statusCode = 401;
 			throw error;
 		}
-		loadedUser = user;
-		return bcrypt.compare(password, user.password);
-	})
-	.then( isEqual => {
+		const isEqual = await bcrypt.compare(password, user.password);
 		if (!isEqual) {
 			const error = new Error('Invalid email or password.');
 			error.statusCode = 401;
 			throw error;
 		}
-
+	
 		const token = jwt.sign(
-			{email:loadedUser.email, userId: loadedUser._id.toString()},
+			{email:user.email, userId: user._id.toString()},
 			config.jwtSecret,
 			{ expiresIn: '1h'}
 		);
-		res.status(200).json({token: token, userId: loadedUser._id.toString()});
-	})
-	.catch( err => {
+
+		res.status(200).json({token: token, userId: user._id.toString()});
+	}catch( err){
 		if (!err.statusCode) {
 			err.statusCode = 500;
 		}
 		next(err);
-	})
+	}
 };

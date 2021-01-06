@@ -3,11 +3,12 @@ const {body} = require('express-validator');
 
 const router = express.Router();
 const postController = require('../controllers/postController');
+const isAuth = require('../middleware/is-auth');
 
-router.get('/posts', postController.getPosts);
+router.get('/posts', isAuth, postController.getPosts);
 router.get('/post/:postId', postController.getPost);
 
-router.post('/post', [
+router.post('/post', isAuth, [
 	body('title')
 		.trim()
 		.isLength({min: 5, max: 90}).withMessage('Title should be between 5 to 90 characters.'),
@@ -17,7 +18,7 @@ router.post('/post', [
 
 	], postController.createPost);
 
-router.put('/post/:postId', [
+router.put('/post/:postId', isAuth, [
 	body('title')
 		.trim()
 		.isLength({min: 5, max: 90}).withMessage('Title should be between 5 to 90 characters.'),
@@ -27,6 +28,6 @@ router.put('/post/:postId', [
 
 	], postController.updatePost);
 
-router.delete('/post/:postId', postController.deletePost);
+router.delete('/post/:postId', isAuth, postController.deletePost);
 
 module.exports = router;

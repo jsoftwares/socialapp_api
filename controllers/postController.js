@@ -65,8 +65,8 @@ exports.createPost = (req, res, next) => {
 	if (!errors.isEmpty()) {
 		const error = new Error('Validation failed. Entered data is invalid.');
 		error.statusCode = 422;
-		error.errors = errors.array();
-		throw error;	//exits this function execution if an error exist
+		error.data = errors.array();
+		throw error;	//exits this function execution if an error exist and sends control to the catch block
 	}
 
 	if (!req.file) {

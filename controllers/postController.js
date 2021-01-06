@@ -1,7 +1,10 @@
-const Post = require('../models/post');
 const {validationResult} = require('express-validator');
 const fs = require('fs');
 const path = require('path');
+
+const Post = require('../models/post');
+const User = require('../models/user');
+
 
 const deleteImage = filePath => {
 	filePath = path.join(__dirname, '..', filePath);
@@ -68,7 +71,7 @@ exports.createPost = (req, res, next) => {
 		error.data = errors.array();
 		throw error;	//exits this function execution if an error exist and sends control to the catch block
 	}
-
+	let creator;
 	if (!req.file) {
 		const error = new Error('No image provided');
 		error.statusCode = 422;
@@ -79,13 +82,22 @@ exports.createPost = (req, res, next) => {
 		title: req.body.title,
 		content: req.body.content,
 		imageUrl: imageUrl,
-		creator: {name: 'Jeffrey Onochie'},
+		creator: req.userId
 	});
 	post.save()
 	.then( result => {
+		return User.findById(req.userId);
+	})
+	.then( user => {
+		creator = user;
+		user.posts.push(user);	//add the ID of the user to the user's posts array
+		return user.save();
+	})
+	.then( result => {
 		res.status(201).json({
-			post: result,
-			message: 'Post created successfully!'
+			message: 'Post created successfully!',
+			post: post,
+			creator: {_id: creator._id, name: creator.name}
 		})
 	})
 	.catch( err => {

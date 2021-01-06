@@ -22,4 +22,10 @@ router.put('/signup', [
 	body('name').trim().not().isEmpty()
 ], authController.signup);
 
+router.post('/login', [
+	body('email')
+		.isEmail().withMessage('Enter a valid E-mail'),
+	body('password').trim().isLength({min:5}).withMessage('Password must be at least 5 characters.')
+], authController.login);
+
 module.exports = router;

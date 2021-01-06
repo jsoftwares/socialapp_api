@@ -138,6 +138,12 @@ exports.updatePost = (req, res, next) => {
 			throw error;
 		}
 
+		if (post.creator.toString() !== req.userId) {
+			const error = new Error('Unauthorized.');
+			error.statusCode = 403;
+			throw error;
+		}
+
 		if (imageUrl !== post.imageUrl) {
 			deleteImage(post.imageUrl);
 		}
@@ -172,14 +178,26 @@ exports.deletePost = (req, res, next) => {
 		}
 
 		//Check if post was created by logged in user
+		if (post.creator.toString() !== req.userId) {
+			const error = new Error('Unauthorized.');
+			error.statusCode = 403;
+			throw error;
+		}
+
 		deleteImage(post.imageUrl);
-		return Post.findByIdAndRemove(postId)
-		.then( result => {
-			res.status(200).json({
-				message: 'Post deleted.'
-			})
-		})
-	}).catch( err => {
+		return Post.findByIdAndRemove(postId);	
+	})
+	.then( result => {
+		return User.findById(req.userId);
+	})
+	.then( user => {
+		user.posts.pull(postId);
+		return user.save();
+	})
+	.then( result => {
+		res.status(200).json({message: 'Post deleted.'});
+	})
+	.catch( err => {
 		if (!err.statusCode) {
 			err.statusCode = 500;
 		}

@@ -9,10 +9,10 @@ router.get('/posts', postController.getPosts);
 router.post('/post', [
 	body('title')
 		.trim()
-		.isLength({min: 10, max: 90}).withMessage('Title should be between 10 to 90 characters.'),
+		.isLength({min: 5, max: 90}).withMessage('Title should be between 5 to 90 characters.'),
 	body('content')
 		.trim()
-		.isLength({min: 10}).withMessage('Content should be atleast 10 characters.'),
+		.isLength({min: 5}).withMessage('Content should be atleast 5 characters.'),
 
 	], postController.createPost);
 

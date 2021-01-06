@@ -3,7 +3,10 @@ const {validationResult} = require('express-validator');
 const fs = require('fs');
 const path = require('path');
 
-
+const deleteImage = filePath => {
+	filePath = path.join(__dirname, '..', filePath);
+	fs.unlink(filePath, err => console.log(err));
+}
 
 exports.getPosts = (req, res, next) => {
 	Post.find()
@@ -33,7 +36,7 @@ exports.getPost = (req, res, next) => {
 	Post.findById(postId)
 	.then( post => {
 		if (!post) {
-			const error = new Error('Post cannot be found.');
+			const error = new Error('Post not found.');
 			error.statusCode = 404;
 			throw error;
 		}
@@ -57,10 +60,17 @@ exports.createPost = (req, res, next) => {
 		error.errors = errors.array();
 		throw error;	//exits this function execution if an error exist
 	}
+
+	if (!req.file) {
+		const error = new Error('No image provided');
+		error.statusCode = 422;
+		throw error;
+	}
+	const imageUrl = req.file.path;
 	const post = new Post({
 		title: req.body.title,
 		content: req.body.content,
-		imageUrl: '/images/course1.jpg',
+		imageUrl: imageUrl,
 		creator: {name: 'Jeffrey Onochie'},
 	});
 	post.save()
@@ -77,3 +87,39 @@ exports.createPost = (req, res, next) => {
 		next(err);
 	});
 };
+
+exports.updatePost = (req, res, next) => {
+	const postId = req.params.postId;
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		const error = new Error('Validation failed. Entered data is invalid.');
+		error.statusCode = 422;
+		error.errors = errors.array();
+		throw error;	//exits this function execution if an error exist
+	}
+
+	Post.findById(postId)
+	.then( post => {
+		if (!post) {
+			const error = new Error('Post not found.');
+			error.statusCode = 404;
+			throw error;
+		}
+
+		post.title = req.body.title;
+		post.content = req.body.content;
+		return post.save();
+	}).then( result => {
+		res.status(201).json({
+			post: result,
+			message: 'Post updated!'
+		});
+	})
+	.catch( err => {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	});
+
+}

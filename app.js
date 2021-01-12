@@ -3,12 +3,14 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const Mongoose = require('mongoose');
 const multer = require('multer');
+const {graphqlHTTP} = require('express-graphql');
+
 const app = express();
 
-const feedRoutes = require('./routes/feed');
-const authRoutes = require('./routes/auth');
-
 const config = require('./util/development.json');
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolver = require('./graphql/resolvers');
+
 const fileStorage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		cb(null, "images")
@@ -35,8 +37,13 @@ app.use( (req, res, next) => {
 
 	next();
 });
-app.use('/feed', feedRoutes);
-app.use('/auth', authRoutes);
+
+app.use('/graphql', graphqlHTTP({
+	schema: graphqlSchema,
+	rootValue: graphqlResolver,
+	graphiql: true
+	})
+);
 
 app.use( (error, req, res, next) => {
 	console.log(error);
@@ -48,10 +55,6 @@ app.use( (error, req, res, next) => {
 
 Mongoose.connect(config.mongodbURI, {useNewUrlParser: true, useUnifiedTopology: true})
 .then( result => {
-	server = app.listen(process.env.PORT || 8080);
-	const io = require('./socket').init(server);
-	io.on('connection', socket =>{
-		console.log('Client connected');
-	})
+	app.listen(process.env.PORT || 8080);
 })
 .catch( err => console.log(err));

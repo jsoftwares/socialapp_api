@@ -18,7 +18,8 @@ exports.getPosts = async (req, res, next) => {
 
 	try{
 		const totalItems = await Post.find().countDocuments();
-		const posts = await Post.find().populate('creator').skip((currentPage - 1) * perPage).limit(perPage);
+		const posts = await Post.find().populate('creator').sort({createdAt: -1})
+		.skip((currentPage - 1) * perPage).limit(perPage);
 
 		if (!posts) {
 			const error = new Error('Posts cannot be found.');
@@ -128,7 +129,7 @@ exports.updatePost = async (req, res, next) => {
 	}
 
 	try{
-		const post = await Post.findById(postId);
+		const post = await Post.findById(postId).populate('creator');
 	
 		if (!post) {
 			const error = new Error('Post not found.');
@@ -136,7 +137,7 @@ exports.updatePost = async (req, res, next) => {
 			throw error;
 		}
 	
-		if (post.creator.toString() !== req.userId) {
+		if (post.creator._id.toString() !== req.userId) {
 			const error = new Error('Unauthorized.');
 			error.statusCode = 403;
 			throw error;
@@ -151,6 +152,7 @@ exports.updatePost = async (req, res, next) => {
 		post.imageUrl = imageUrl;
 		await post.save();
 	
+		io.getIO().emit('posts', {action: 'update', post:post});
 		res.status(200).json({
 			post: post,
 			message: 'Post updated!'

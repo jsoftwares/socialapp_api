@@ -30,7 +30,7 @@ app.use(multer({ storage: fileStorage, fileFilter:fileFilter }).single('image'))
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use( (req, res, next) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE', 'OPTIONS');
 	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
 	next();
@@ -48,5 +48,10 @@ app.use( (error, req, res, next) => {
 
 Mongoose.connect(config.mongodbURI, {useNewUrlParser: true, useUnifiedTopology: true})
 .then( result => {
-	app.listen(process.env.PORT || 8080);
-}).catch( err => console.log(err));
+	server = app.listen(process.env.PORT || 8080);
+	const io = require('./socket').init(server);
+	io.on('connection', socket =>{
+		console.log('Client connected');
+	})
+})
+.catch( err => console.log(err));

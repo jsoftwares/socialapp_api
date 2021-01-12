@@ -6,7 +6,7 @@ module.exports = (req, res, next) => {
 	//get() is used to read headers from request stream
 	const authHeader = req.get('Authorization');
 	if (!authHeader) {
-		const error = new Error('Unauthenticated.');
+		const error = new Error('Unauthorized.');
 		throw error;
 	}
 	const token = authHeader.split(' ')[1];
@@ -19,7 +19,7 @@ module.exports = (req, res, next) => {
 	}
 
 	if (!decodedToken) {
-		const error = new Error('Unauthenticated.')
+		const error = new Error('Unauthorized.')
 		error.statusCode = 401;
 		throw error;
 	}

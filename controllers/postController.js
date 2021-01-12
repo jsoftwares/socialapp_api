@@ -2,6 +2,7 @@ const {validationResult} = require('express-validator');
 const fs = require('fs');
 const path = require('path');
 
+const io = require('../socket');	//this would already have been initialize in app.js by the time d req gets here
 const Post = require('../models/post');
 const User = require('../models/user');
 
@@ -79,7 +80,7 @@ exports.createPost = async (req, res, next) => {
 		title: req.body.title,
 		content: req.body.content,
 		imageUrl: imageUrl,
-		creator: req.userId
+		creator: req.userId	//userId key was set in--auth middleware during JWT authentication
 	});
 
 	try{
@@ -87,12 +88,15 @@ exports.createPost = async (req, res, next) => {
 		const user = await User.findById(req.userId);
 		user.posts.push(user);	//add the ID of the user to the user's posts array
 		await user.save();
-	
+
+		//Emit an event to all active users on the all posts page.
+		io.getIO().emit('posts', {action: 'create', post: {...post, creator:{_id:req.userId, name: user.name}}});
+
 		res.status(201).json({
 			message: 'Post created successfully!',
 			post: post,
 			creator: {_id: user._id, name: user.name}
-		})
+		});
 	}catch( err) {
 		if (!err.statusCode) {
 			err.statusCode = 500;

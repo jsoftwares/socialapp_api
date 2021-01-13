@@ -41,7 +41,20 @@ app.use( (req, res, next) => {
 app.use('/graphql', graphqlHTTP({
 	schema: graphqlSchema,
 	rootValue: graphqlResolver,
-	graphiql: true
+	graphiql: true,
+	formatError(err) {
+		//OriginalError will b set by GraphQL when it detects an error thrown in your code either by u or
+		//a 3rd party package. A technical error eg missing a character in your GraphQL query will not set
+		//originalError so we return err which is GraphQL default error.
+		if (!err.originalError) {
+			return err;
+		}
+		const data = err.originalError.data;
+		const message = err.message || 'An error occured.';	//we can extract our msg directly on err bcos its already pulled out of error by graphql
+		const code = err.originalError.code || 500;
+		return {message:message, status:code, data:data};
+
+	}
 	})
 );
 

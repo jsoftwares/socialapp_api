@@ -34,7 +34,13 @@ app.use( (req, res, next) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE', 'OPTIONS');
 	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
+	
+	//This is ensure we get d expected error response since GraphQL blocks any req that's not GET or POST, OPTIONS
+	//which is sent before our actual req would fail hence we will get that error instead of d actual error if we have any in our code
+	//Note we returnd an empty response so that next() is not executed, hence OPTIONS req never makes it to d graphql endpoint but still gets a valid res
+	if (req.method === 'OPTIONS') {
+		return res.sendStatus(200);
+	}
 	next();
 });
 

@@ -23,6 +23,11 @@ module.exports = buildSchema(`
 		resetTokenExpiration: String
 	}
 
+	type AuthData {
+		token: String!
+		userId: String!
+	}
+
 	input SignupData {
 		name: String!
 		email: String!
@@ -30,7 +35,7 @@ module.exports = buildSchema(`
 	}
 
 	type RootQuery {
-		hello: String!
+		login(email: String!, password: String!) : AuthData
 	}
 
 	type RootMutation {

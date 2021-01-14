@@ -3,6 +3,7 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
+const Post = require('../models/post');
 config = require('../util/development.json');
 
 module.exports = {
@@ -66,6 +67,52 @@ module.exports = {
 		}, config.jwtSecret, {expiresIn: '1hr'});
 
 		return {token: token, userId:user._id.toString()};
+	},
+
+	createPost: async function({ postInput }, req) {
+		//authentication
+
+		if (!req.isAuth) {
+			const error = new Error('Unauthenticated.')
+			error.code = 401;
+			throw error;
+		}
+		//validation
+		const errors = [];
+		if (!validator.isLength(postInput.title, {min:5})) {
+			errors.push({message: 'Title must have at least 5 characters.'})
+		}
+		if (!validator.isLength(postInput.content, {min:5})) {
+			errors.push({message: 'Content must have at least 5 characters.'})
+		}
+		if (errors.length > 0) {
+			const error = new Error('Invalid input.');
+			error.data = errors;
+			error.code = 422;
+			throw error;
+		}
+		const user = await User.findById(req.userId);	//we add userId to req in auth middleware
+		if (!user) {
+			const error = new Error('Invalid user.');
+			error.data = errors;
+			error.code = 401;
+			throw error;
+		}
+
+		const post = new Post({
+			title: postInput.title,
+			content: postInput.content,
+			imageUrl: postInput.imageUrl,
+			creator: user
+		});
+
+		const createdPost = await post.save();
+		user.posts.push(createdPost);
+		await user.save();
+
+		return {...createdPost._doc, _id: createdPost._id.toString(), 
+			createdAt: createdPost.createdAt.toISOString(), updatedAt:createdPost.updatedAt.toISOString()
+		};
 	}
 
 
